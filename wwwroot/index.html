@@ -1,0 +1,828 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد مانیتورینگ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap');
+
+        :root {
+            --bg-primary: #111827;
+            --bg-secondary: #1f2937;
+            --bg-tertiary: #374151;
+            --bg-gradient-start: #111827;
+            --bg-gradient-end: #0c0c14;
+            --text-primary: #d1d5db;
+            --text-secondary: #9ca3af;
+            --text-accent: #e0e0e0;
+            --border-primary: #374151;
+            --border-secondary: #4b5563;
+            --accent-primary: #4f46e5;
+            --accent-primary-hover: #4338ca;
+            --modal-backdrop: rgba(0, 0, 0, 0.8);
+            --shadow-color: rgba(0,0,0,0.2);
+            --group-title-border: #3b82f6;
+        }
+
+        .light-theme {
+            --bg-primary: #f9fafb;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e5e7eb;
+            --bg-gradient-start: #f3f4f6;
+            --bg-gradient-end: #e5e7eb;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-accent: #111827;
+            --border-primary: #d1d5db;
+            --border-secondary: #9ca3af;
+            --accent-primary: #4f46e5;
+            --accent-primary-hover: #6366f1;
+            --modal-backdrop: rgba(0, 0, 0, 0.5);
+            --shadow-color: rgba(0,0,0,0.1);
+            --group-title-border: #a5b4fc;
+        }
+
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .form-container {
+            background-color: var(--bg-secondary);
+            border-radius: 0.75rem;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid var(--border-primary);
+        }
+
+        .form-input-custom {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-secondary);
+            color: var(--text-accent);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+            .form-input-custom:focus {
+                outline: none;
+                border-color: var(--accent-primary);
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 30%, transparent);
+            }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+            .btn:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px var(--shadow-color);
+            }
+
+            .btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+        .btn-add {
+            background-color: var(--accent-primary);
+            border-color: color-mix(in srgb, var(--accent-primary) 80%, white);
+            color: white;
+        }
+
+            .btn-add:hover:not(:disabled) {
+                background-color: var(--accent-primary-hover);
+            }
+
+        .btn-danger {
+            background-color: #dc2626;
+            border-color: #ef4444;
+            color: white;
+        }
+
+            .btn-danger:hover:not(:disabled) {
+                background-color: #b91c1c;
+            }
+
+        .btn-submit {
+            background-color: #2563eb;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+            .btn-submit:hover:not(:disabled) {
+                background-color: #1d4ed8;
+            }
+
+        .btn-cancel {
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-secondary);
+            color: var(--text-primary);
+        }
+
+            .btn-cancel:hover:not(:disabled) {
+                background-color: color-mix(in srgb, var(--bg-tertiary) 80%, black);
+            }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-secondary);
+            color: var(--text-primary);
+        }
+
+            .btn-secondary:hover:not(:disabled) {
+                background-color: color-mix(in srgb, var(--bg-tertiary) 80%, black);
+            }
+
+        .status-card {
+            background-color: color-mix(in srgb, var(--bg-secondary) 50%, transparent);
+            border-width: 2px;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+            .status-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px var(--shadow-color);
+            }
+
+        .status-Online {
+            border-color: #22c55e;
+        }
+
+        .status-Offline {
+            border-color: #ef4444;
+        }
+
+        .status-Pending {
+            border-color: #f59e0b;
+        }
+
+        @keyframes flash-green {
+            50% {
+                box-shadow: 0 0 16px 5px rgba(34, 197, 94, 0.5);
+            }
+        }
+
+        @keyframes flash-red {
+            50% {
+                box-shadow: 0 0 16px 5px rgba(239, 68, 68, 0.5);
+            }
+        }
+
+        @keyframes flash-yellow {
+            50% {
+                box-shadow: 0 0 16px 5px rgba(245, 158, 11, 0.5);
+            }
+        }
+
+        .is-updating-online {
+            animation: flash-green 0.5s ease-in-out;
+        }
+
+        .is-updating-offline {
+            animation: flash-red 0.5s ease-in-out;
+        }
+
+        .is-updating-pending {
+            animation: flash-yellow 0.5s ease-in-out;
+        }
+
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-content {
+            transition: transform 0.3s ease;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+        }
+
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+            .modal.hidden .modal-content {
+                transform: scale(0.95);
+            }
+
+        .modal-backdrop {
+            background-color: var(--modal-backdrop);
+            backdrop-filter: blur(4px);
+        }
+
+        .group-title {
+            border-color: var(--group-title-border);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Auth Section -->
+    <div id="auth-section" class="flex items-center justify-center min-h-screen p-4">
+        <div id="login-form-container" class="form-container">
+            <h2 class="text-2xl font-bold text-center mb-8" style="color: var(--text-primary)">ورود به داشبورد مانیتورینگ</h2>
+            <form id="login-form">
+                <div class="space-y-6">
+                    <div><label style="color: var(--text-secondary)">ایمیل</label><input type="email" id="login-email" value="admin@example.com" required class="form-input-custom mt-2"></div>
+                    <div><label style="color: var(--text-secondary)">رمز عبور</label><input type="password" id="login-password" value="Admin@123" required class="form-input-custom mt-2"></div>
+                </div>
+                <div id="login-error" class="text-red-400 text-sm mt-4 text-center h-5"></div>
+                <button type="submit" class="btn btn-submit w-full mt-6">ورود</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Section -->
+    <div id="dashboard-section" class="hidden max-w-screen-2xl mx-auto p-4 md:p-8">
+        <header class="flex flex-wrap items-center justify-between gap-6 mb-8 pb-6 border-b" style="border-color: var(--border-primary)">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight" style="color: var(--text-primary)">داشبورد مانیتورینگ</h1>
+                <p class="mt-2" style="color: var(--text-secondary)">وضعیت سرویس‌های خود را در لحظه مشاهده کنید.</p>
+            </div>
+            <div id="stats-bar" class="flex items-center gap-4 text-sm font-semibold rounded-lg p-3" style="background-color: var(--bg-secondary); border: 1px solid var(--border-primary)"></div>
+            <div class="flex items-center gap-4">
+                <div id="admin-header-controls" class="hidden items-center gap-4">
+                    <button id="manage-groups-btn" class="btn btn-secondary"><i class="fas fa-layer-group"></i><span>مدیریت گروه‌ها</span></button>
+                    <button id="manage-users-btn" class="btn btn-secondary"><i class="fas fa-users-cog"></i><span>مدیریت کاربران</span></button>
+                </div>
+                <button id="theme-toggle-btn" class="btn btn-secondary !p-0 h-10 w-10 flex items-center justify-center">
+                    <i id="theme-toggle-icon" class="fas"></i>
+                </button>
+                <div id="user-info-container" class="flex items-center gap-4 p-2 rounded-lg" style="background-color: var(--bg-secondary); border: 1px solid var(--border-primary)">
+                    <span class="text-sm font-normal px-2" id="user-info" style="color: var(--text-primary)"></span>
+                    <button id="logout-btn" class="btn btn-danger text-sm py-1 px-3"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+                <div class="relative flex-grow max-w-lg">
+                    <span class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none"><i class="fas fa-search" style="color: var(--text-secondary)"></i></span>
+                    <input type="text" id="search-box" placeholder="جستجو در سرویس‌ها..." class="w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none focus:ring-2" style="background-color: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-primary);">
+                </div>
+                <div id="admin-action-buttons" class="flex items-center gap-4">
+                    <button id="manual-refresh-btn" class="btn btn-secondary"><i id="manual-refresh-icon" class="fas fa-sync"></i><span>به‌روزرسانی دستی</span></button>
+                    <button id="add-service-btn" class="btn btn-add"><i class="fas fa-plus"></i><span>افزودن سرویس</span></button>
+                </div>
+            </div>
+            <div id="service-list-container" class="space-y-12"></div>
+            <div id="no-services" class="hidden text-center py-20 px-6 rounded-xl border-2 border-dashed" style="background-color: var(--bg-secondary); border-color: var(--border-primary);"><i class="fas fa-ghost text-5xl mb-4" style="color: var(--text-secondary)"></i><p class="text-lg" style="color: var(--text-secondary)">هیچ سرویسی برای نمایش وجود ندارد.</p></div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="manage-groups-modal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="modal-content w-full max-w-md p-8 rounded-xl shadow-2xl">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold" style="color: var(--text-primary)">مدیریت گروه‌ها</h2><button type="button" class="btn-cancel-modal hover:text-white transition-colors" style="color: var(--text-secondary)"><i class="fas fa-times fa-lg"></i></button></div>
+            <form id="add-group-form" class="flex items-center gap-3 mb-6 pb-6 border-b" style="border-color: var(--border-primary)">
+                <input type="text" id="new-group-name" placeholder="نام گروه جدید..." required class="form-input-custom flex-grow">
+                <button type="submit" class="btn btn-add whitespace-nowrap">افزودن</button>
+            </form>
+            <div class="space-y-3 max-h-64 overflow-y-auto" id="group-list"></div>
+        </div>
+    </div>
+
+    <div id="add-user-modal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="modal-content w-full max-w-lg p-8 rounded-xl shadow-2xl">
+            <h2 class="text-2xl font-bold text-center mb-8" style="color: var(--text-primary)">ایجاد کاربر جدید</h2>
+            <form id="add-user-form" class="space-y-5">
+                <div><label style="color: var(--text-secondary)">ایمیل</label><input type="email" id="new-user-email" required class="form-input-custom mt-2"></div>
+                <div><label style="color: var(--text-secondary)">رمز عبور</label><input type="password" id="new-user-password" required class="form-input-custom mt-2"></div>
+                <div><label style="color: var(--text-secondary)">نقش</label><select id="new-user-role" class="form-input-custom mt-2"><option value="User">User</option><option value="Admin">Admin</option></select></div>
+                <div id="add-user-message" class="text-sm mt-4 text-center h-5"></div>
+                <div class="flex items-center justify-end gap-4 pt-4 mt-4 border-t" style="border-color: var(--border-primary)">
+                    <button type="button" class="btn-cancel-modal btn btn-cancel">انصراف</button>
+                    <button type="submit" class="btn btn-submit">ایجاد کاربر</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="service-modal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="modal-content w-full max-w-lg p-8 rounded-xl shadow-2xl">
+            <h2 class="text-2xl font-bold text-center mb-8" id="form-title" style="color: var(--text-primary)"></h2>
+            <form id="service-form" class="space-y-5">
+                <input type="hidden" id="service-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div><label style="color: var(--text-secondary)">نام سرویس</label><input type="text" id="service-name" required class="form-input-custom mt-2"></div>
+                    <div><label style="color: var(--text-secondary)">نوع سرویس</label><select id="service-type" class="form-input-custom mt-2"><option value="0">Website</option><option value="1">API</option><option value="2">TCP Connection</option><option value="3">Redis</option></select></div>
+                </div>
+                <div>
+                    <label id="service-url-label" style="color: var(--text-secondary)">آدرس (URL یا Host:Port)</label>
+                    <div class="flex items-center gap-2 mt-2">
+                        <input type="text" id="service-url" required placeholder="https://example.com" class="form-input-custom text-left" dir="ltr">
+                        <button type="button" id="validate-url-btn" class="btn btn-secondary text-sm py-2 whitespace-nowrap">بررسی</button>
+                    </div>
+                    <div id="validation-result" class="text-sm mt-2 h-5"></div>
+                </div>
+                <div id="redis-fields" class="hidden space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div><label style="color: var(--text-secondary)">نام کاربری</label><input type="text" id="redis-username" class="form-input-custom mt-2"></div>
+                        <div><label style="color: var(--text-secondary)">رمز عبور</label><input type="password" id="redis-password" class="form-input-custom mt-2"></div>
+                    </div>
+                    <div><label style="color: var(--text-secondary)">شماره دیتابیس</label><input type="number" id="redis-db" value="7" min="0" class="form-input-custom mt-2"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div><label style="color: var(--text-secondary)">بازه زمانی (میلی‌ثانیه)</label><input type="number" id="service-interval" value="60000" min="500" required class="form-input-custom mt-2"></div>
+                    <div><label style="color: var(--text-secondary)">بازه تلاش مجدد (میلی‌ثانیه)</label><input type="number" id="service-retry-interval" value="300000" min="5000" required class="form-input-custom mt-2"></div>
+                </div>
+                <div><label style="color: var(--text-secondary)">ترتیب نمایش</label><input type="number" id="service-sort-order" value="100" required class="form-input-custom mt-2"></div>
+                <div><label style="color: var(--text-secondary)">گروه سرویس</label><select id="service-group" class="form-input-custom mt-2"><option value="0">بدون گروه</option></select></div>
+                <div class="flex items-center justify-end gap-4 pt-4 mt-4 border-t" style="border-color: var(--border-primary)">
+                    <button type="button" class="btn-cancel-modal btn btn-cancel">انصراف</button>
+                    <button type="submit" id="form-submit-button" class="btn btn-submit" disabled>ذخیره</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="details-modal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="modal-content w-full max-w-3xl p-8 rounded-xl shadow-2xl">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b" style="border-color: var(--border-primary)">
+                <div id="details-header" class="flex items-center gap-4"></div>
+                <button class="btn-cancel-modal transition-colors hover:text-white" style="color: var(--text-secondary)"><i class="fas fa-times fa-2x"></i></button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm mb-6">
+                <div class="p-4 rounded-lg" style="background-color: var(--bg-primary)"><p style="color: var(--text-secondary)">آدرس سرویس</p><p id="details-url" class="font-mono text-xs text-indigo-300 mt-1 break-all"></p></div>
+                <div class="p-4 rounded-lg" style="background-color: var(--bg-primary)"><p style="color: var(--text-secondary)">وضعیت فعلی</p><p id="details-status" class="font-bold text-lg mt-1"></p></div>
+                <div class="p-4 rounded-lg" style="background-color: var(--bg-primary)"><p style="color: var(--text-secondary)">آخرین بررسی</p><p id="details-last-check" class="font-semibold mt-1" style="color: var(--text-primary)"></p></div>
+            </div>
+            <div class="p-4 rounded-lg" style="background-color: var(--bg-primary)"><p class="mb-2" style="color: var(--text-secondary)">توضیحات آخرین وضعیت:</p><p id="details-description" class="text-xs font-mono" style="color: var(--text-primary)"></p></div>
+            <div class="mt-6"><h3 class="font-bold text-lg mb-4" style="color: var(--text-primary)">تاریخچه ۱۰ قطعی اخیر</h3><div id="details-history" class="space-y-3 max-h-64 overflow-y-auto pr-2"></div></div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="modal-content w-full max-w-md p-8 rounded-xl shadow-2xl">
+            <h2 class="text-xl font-bold mb-4" id="confirm-title" style="color: var(--text-primary)"></h2>
+            <p class="mb-8" id="confirm-text" style="color: var(--text-secondary)"></p>
+            <div class="flex justify-end gap-4">
+                <button id="confirm-cancel-btn" class="btn btn-cancel">انصراف</button>
+                <button id="confirm-ok-btn" class="btn btn-danger">تایید حذف</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Theme Management ---
+            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+            const themeToggleIcon = document.getElementById('theme-toggle-icon');
+            const applyTheme = (theme) => {
+                document.body.classList.toggle('light-theme', theme === 'light');
+                themeToggleIcon.className = `fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`;
+            };
+            themeToggleBtn.addEventListener('click', () => {
+                const newTheme = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+            applyTheme(localStorage.getItem('theme') || 'dark');
+
+            // --- DOM Elements ---
+            const authSection = document.getElementById('auth-section');
+            const dashboardSection = document.getElementById('dashboard-section');
+            const loginForm = document.getElementById('login-form');
+            const logoutBtn = document.getElementById('logout-btn');
+            const serviceListContainer = document.getElementById('service-list-container');
+            const noServicesMessage = document.getElementById('no-services');
+            const searchBox = document.getElementById('search-box');
+            const adminHeaderControls = document.getElementById('admin-header-controls');
+            const adminActionButtons = document.getElementById('admin-action-buttons');
+            const manualRefreshBtn = document.getElementById('manual-refresh-btn');
+            const manualRefreshIcon = document.getElementById('manual-refresh-icon');
+
+            // --- Modal Elements ---
+            const modals = document.querySelectorAll('.modal');
+            const addServiceBtn = document.getElementById('add-service-btn');
+            const serviceModal = document.getElementById('service-modal');
+            const serviceForm = document.getElementById('service-form');
+            const formTitle = document.getElementById('form-title');
+            const formSubmitButton = document.getElementById('form-submit-button');
+            const manageUsersBtn = document.getElementById('manage-users-btn');
+            const addUserModal = document.getElementById('add-user-modal');
+            const addUserForm = document.getElementById('add-user-form');
+            const addUserMessage = document.getElementById('add-user-message');
+            const manageGroupsBtn = document.getElementById('manage-groups-btn');
+            const manageGroupsModal = document.getElementById('manage-groups-modal');
+            const addGroupForm = document.getElementById('add-group-form');
+            const newGroupNameInput = document.getElementById('new-group-name');
+            const groupListDiv = document.getElementById('group-list');
+            const detailsModal = document.getElementById('details-modal');
+
+            // --- Confirmation Modal Elements ---
+            const confirmModal = document.getElementById('confirm-modal');
+            const confirmTitle = document.getElementById('confirm-title');
+            const confirmText = document.getElementById('confirm-text');
+            const confirmOkBtn = document.getElementById('confirm-ok-btn');
+            const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+            let confirmCallback = null;
+
+            // --- State and Config ---
+            const API_BASE_URL = '';
+            let allServices = [];
+            let allGroups = [];
+            let user = null;
+            let signalRConnection = null;
+
+            // --- Type Definitions ---
+            const serviceTypes = { 0: { name: 'Website', icon: 'fa-globe' }, 1: { name: 'API', icon: 'fa-code-branch' }, 2: { name: 'TCP', icon: 'fa-network-wired' }, 3: { name: 'Redis', icon: 'fa-database' } };
+            const statusInfo = { 0: { text: 'در انتظار', color: 'text-amber-400' }, 1: { text: 'آنلاین', color: 'text-green-400' }, 2: { text: 'آفلاین', color: 'text-red-400' } };
+
+            // --- Helper Functions ---
+            const showCustomAlert = (message, isError = true) => {
+                const alertBox = document.createElement('div');
+                alertBox.textContent = message;
+                alertBox.className = `fixed top-5 right-5 p-4 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-green-600'} z-50 transition-transform duration-300 transform translate-x-full`;
+                document.body.appendChild(alertBox);
+                setTimeout(() => alertBox.classList.remove('translate-x-full'), 10);
+                setTimeout(() => {
+                    alertBox.classList.add('translate-x-full');
+                    setTimeout(() => alertBox.remove(), 300);
+                }, 3000);
+            };
+            const getAuthHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` });
+            const formatDateTime = (dateString, withDate = false) => {
+                if (!dateString) return 'نامشخص';
+                const options = {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                    hour12: false, timeZone: 'Asia/Tehran'
+                };
+                if (withDate) {
+                    options.year = 'numeric';
+                    options.month = '2-digit';
+                    options.day = '2-digit';
+                }
+                return new Date(dateString).toLocaleString('fa-IR', options);
+            };
+
+            // --- UI Rendering ---
+            const renderStats = () => {
+                const stats = { total: allServices.length, online: 0, offline: 0, pending: 0 };
+                allServices.forEach(s => {
+                    if (s.status === 1) stats.online++; else if (s.status === 2) stats.offline++; else stats.pending++;
+                });
+                document.getElementById('stats-bar').innerHTML = `<span style="color: var(--text-secondary)">کل: <strong style="color: var(--text-primary)">${stats.total}</strong></span><div class="w-px h-5" style="background-color: var(--border-secondary)"></div><span class="text-green-400">آنلاین: <strong style="color: var(--text-primary)">${stats.online}</strong></span><span class="text-red-400">آفلاین: <strong style="color: var(--text-primary)">${stats.offline}</strong></span><span class="text-amber-400">در انتظار: <strong style="color: var(--text-primary)">${stats.pending}</strong></span>`;
+            };
+            const createServiceCardHTML = (service) => {
+                const type = serviceTypes[service.type];
+                const statusClass = { 0: 'status-Pending', 1: 'status-Online', 2: 'status-Offline' }[service.status];
+                const typeColors = { 0: 'bg-blue-500 text-blue-100', 1: 'bg-purple-500 text-purple-100', 2: 'bg-teal-500 text-teal-100', 3: 'bg-red-500 text-red-100' };
+                const adminButtons = `<button data-action="edit" class="transition-colors hover:text-yellow-400" style="color: var(--text-secondary);"><i class="fas fa-edit fa-lg"></i></button><button data-action="delete" class="transition-colors hover:text-red-400" style="color: var(--text-secondary);"><i class="fas fa-trash fa-lg"></i></button>`;
+                return `<div data-service-id="${service.id}" class="status-card p-5 rounded-xl shadow-lg ${statusClass}"><div class="flex justify-between items-center mb-4"><span class="text-xs font-bold px-3 py-1 rounded-full ${typeColors[service.type]}"><i class="fas ${type.icon} mr-1"></i> ${type.name}</span><div class="flex items-center gap-3"><button data-action="details" class="transition-colors hover:text-blue-400" style="color: var(--text-secondary);"><i class="fas fa-eye fa-lg"></i></button>${user && user.role === 'Admin' ? adminButtons : ''}</div></div><h3 class="font-extrabold text-2xl break-words text-center truncate" style="color: var(--text-primary);">${service.name}</h3><div class="mt-4 pt-4 border-t text-center" style="border-color: var(--border-primary)"><span class="text-xs" style="color: var(--text-secondary)">آخرین بررسی: <span class="font-semibold" style="color: var(--text-primary)">${formatDateTime(service.lastCheckTime)}</span></span></div></div>`;
+            };
+            const renderServices = (servicesToRender) => {
+                noServicesMessage.classList.toggle('hidden', servicesToRender && servicesToRender.length > 0);
+                serviceListContainer.innerHTML = '';
+                if (servicesToRender && servicesToRender.length > 0) {
+                    const groupedServices = servicesToRender.reduce((acc, service) => {
+                        const groupId = service.serviceGroupId || 0;
+                        if (!acc[groupId]) acc[groupId] = { name: service.serviceGroup ? service.serviceGroup.name : 'سرویس‌های بدون گروه', services: [] };
+                        acc[groupId].services.push(service);
+                        return acc;
+                    }, {});
+                    serviceListContainer.innerHTML = Object.values(groupedServices).sort((a, b) => a.name.localeCompare(b.name, 'fa')).map(group => `<div><h2 class="group-title text-2xl font-bold text-indigo-400 mb-6 pb-2 border-b-2">${group.name}</h2><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">${group.services.map(createServiceCardHTML).join('')}</div></div>`).join('');
+                }
+                renderStats();
+            };
+            const filterServices = () => renderServices(allServices.filter(s => s.name.toLowerCase().includes(searchBox.value.toLowerCase()) || (s.url && s.url.toLowerCase().includes(searchBox.value.toLowerCase()))));
+
+            // --- Data Fetching and Actions ---
+            const fetchAllData = async () => {
+                try {
+                    const [servicesResponse, groupsResponse] = await Promise.all([fetch(`${API_BASE_URL}/api/services`, { headers: getAuthHeaders() }), fetch(`${API_BASE_URL}/api/servicegroups`, { headers: getAuthHeaders() })]);
+                    if (servicesResponse.status === 401) return handleLogout();
+                    if (!servicesResponse.ok || !groupsResponse.ok) throw new Error('Could not fetch initial data.');
+                    allServices = await servicesResponse.json();
+                    allGroups = await groupsResponse.json();
+                    renderGroupList();
+                    populateGroupDropdown();
+                    filterServices();
+                } catch (error) { console.error('Fetch error:', error); showCustomAlert('خطا در دریافت اطلاعات اولیه.'); }
+            };
+            const deleteService = (id) => {
+                const service = allServices.find(s => s.id === id);
+                if (!service) return;
+                showConfirmModal('حذف سرویس', `آیا از حذف سرویس "${service.name}" اطمینان دارید؟`, async () => {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/api/services/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+                        if (!res.ok) throw new Error("Server error");
+                        showCustomAlert("سرویس با موفقیت حذف شد.", false);
+                    } catch (e) { showCustomAlert("خطا در حذف سرویس."); }
+                });
+            };
+            const handleManualRefresh = async () => {
+                manualRefreshBtn.disabled = true;
+                manualRefreshIcon.classList.add('fa-spin');
+                try {
+                    await fetch(`${API_BASE_URL}/api/services/check-all`, { method: 'POST', headers: getAuthHeaders() });
+                    showCustomAlert("درخواست بررسی مجدد ارسال شد.", false);
+                } catch (error) { showCustomAlert('به‌روزرسانی دستی ناموفق بود.'); }
+                finally { setTimeout(() => { manualRefreshBtn.disabled = false; manualRefreshIcon.classList.remove('fa-spin'); }, 1000); }
+            };
+
+            // --- Modal Management ---
+            const openModal = (modal) => modal.classList.remove('hidden');
+            const closeModal = (modal) => modal.classList.add('hidden');
+            const showConfirmModal = (title, text, onConfirm) => {
+                confirmTitle.textContent = title;
+                confirmText.textContent = text;
+                confirmCallback = onConfirm;
+                openModal(confirmModal);
+            };
+
+            // --- Service Form Logic ---
+            const serviceFormElements = {
+                id: document.getElementById('service-id'), name: document.getElementById('service-name'), url: document.getElementById('service-url'), urlLabel: document.getElementById('service-url-label'), type: document.getElementById('service-type'), interval: document.getElementById('service-interval'), sortOrder: document.getElementById('service-sort-order'), group: document.getElementById('service-group'), validateBtn: document.getElementById('validate-url-btn'), validationResult: document.getElementById('validation-result'),
+                redisFields: document.getElementById('redis-fields'), redisUser: document.getElementById('redis-username'), redisPass: document.getElementById('redis-password'), redisDb: document.getElementById('redis-db'),
+                retryInterval: document.getElementById('service-retry-interval')
+            };
+            const populateGroupDropdown = () => { serviceFormElements.group.innerHTML = '<option value="0">بدون گروه</option>'; allGroups.sort((a, b) => a.name.localeCompare(b.name, 'fa')).forEach(g => serviceFormElements.group.add(new Option(g.name, g.id))); };
+            const checkFormValidity = () => { formSubmitButton.disabled = !(serviceFormElements.name.value.trim() && serviceFormElements.url.value.trim()); };
+
+            const toggleRedisFields = () => {
+                const isRedis = serviceFormElements.type.value === '3';
+                serviceFormElements.redisFields.classList.toggle('hidden', !isRedis);
+                serviceFormElements.urlLabel.textContent = isRedis ? 'آدرس Redis (Host:Port)' : 'آدرس (URL یا Host:Port)';
+                serviceFormElements.url.placeholder = isRedis ? 'localhost:6379' : 'https://example.com';
+            };
+
+            const openServiceModal = (isEditing = false) => {
+                serviceForm.reset();
+                serviceFormElements.validationResult.textContent = '';
+                formTitle.textContent = isEditing ? 'ویرایش سرویس' : 'افزودن سرویس جدید';
+                formSubmitButton.textContent = isEditing ? 'ذخیره تغییرات' : 'افزودن';
+                if (!isEditing) {
+                    serviceFormElements.id.value = '';
+                    serviceFormElements.interval.value = 60000;
+                    serviceFormElements.retryInterval.value = 300000;
+                    serviceFormElements.sortOrder.value = 100;
+                    serviceFormElements.group.value = 0;
+                    formSubmitButton.disabled = true;
+                }
+                toggleRedisFields();
+                openModal(serviceModal);
+                if (isEditing) checkFormValidity();
+            };
+            const editService = (id) => {
+                const service = allServices.find(s => s.id === id);
+                if (!service) return;
+                openServiceModal(true);
+                serviceFormElements.id.value = service.id;
+                serviceFormElements.name.value = service.name;
+                serviceFormElements.url.value = service.url;
+                serviceFormElements.type.value = service.type;
+                serviceFormElements.interval.value = service.refreshIntervalMilliseconds;
+                serviceFormElements.retryInterval.value = service.retryIntervalMilliseconds;
+                serviceFormElements.sortOrder.value = service.sortOrder;
+                serviceFormElements.group.value = service.serviceGroupId || 0;
+                serviceFormElements.redisUser.value = service.redisUsername || '';
+                serviceFormElements.redisPass.value = service.redisPassword || '';
+                serviceFormElements.redisDb.value = service.redisDbNumber ?? 7;
+                toggleRedisFields();
+            };
+            const handleValidateUrl = async () => {
+                const type = parseInt(serviceFormElements.type.value);
+                const payload = { url: serviceFormElements.url.value, type };
+                if (type === 3) { Object.assign(payload, { redisUsername: serviceFormElements.redisUser.value, redisPassword: serviceFormElements.redisPass.value, redisDbNumber: parseInt(serviceFormElements.redisDb.value) }); }
+
+                serviceFormElements.validateBtn.disabled = true;
+                serviceFormElements.validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                serviceFormElements.validationResult.textContent = 'در حال بررسی...';
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/services/validate`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.statusDescription);
+                    serviceFormElements.validationResult.textContent = result.statusDescription;
+                    checkFormValidity();
+                } catch (error) { serviceFormElements.validationResult.textContent = `خطا: ${error.message}`; formSubmitButton.disabled = true; }
+                finally { serviceFormElements.validateBtn.disabled = false; serviceFormElements.validateBtn.textContent = 'بررسی'; }
+            };
+            const handleServiceFormSubmit = async (e) => {
+                e.preventDefault();
+                const id = serviceFormElements.id.value;
+                const type = parseInt(serviceFormElements.type.value);
+                const serviceData = {
+                    name: serviceFormElements.name.value, url: serviceFormElements.url.value, type: type,
+                    refreshIntervalMilliseconds: parseInt(serviceFormElements.interval.value),
+                    retryIntervalMilliseconds: parseInt(serviceFormElements.retryInterval.value),
+                    sortOrder: parseInt(serviceFormElements.sortOrder.value),
+                    serviceGroupId: parseInt(serviceFormElements.group.value),
+                    redisUsername: type === 3 ? serviceFormElements.redisUser.value || null : null,
+                    redisPassword: type === 3 ? serviceFormElements.redisPass.value || null : null,
+                    redisDbNumber: type === 3 ? parseInt(serviceFormElements.redisDb.value) : null
+                };
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${API_BASE_URL}/api/services/${id}` : `${API_BASE_URL}/api/services`;
+                try {
+                    const response = await fetch(url, { method, headers: getAuthHeaders(), body: JSON.stringify(serviceData) });
+                    if (!response.ok) throw new Error();
+                    showCustomAlert(`سرویس با موفقیت ${id ? 'ویرایش' : 'ایجاد'} شد.`, false);
+                    closeModal(serviceModal);
+                } catch (error) { showCustomAlert("خطا در ذخیره سازی سرویس."); }
+            };
+
+            // --- Details Modal Logic ---
+            const showDetails = async (id) => {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/services/${id}/details`, { headers: getAuthHeaders() });
+                    if (!res.ok) throw new Error();
+                    const data = await res.json();
+                    const type = serviceTypes[data.type];
+                    document.getElementById('details-header').innerHTML = `<span class="text-2xl font-bold px-4 py-2 rounded-lg" style="background-color: var(--bg-tertiary);"><i class="fas ${type.icon}"></i></span><div><h2 class="text-3xl font-extrabold" style="color: var(--text-primary)">${data.name}</h2><p class="text-sm" style="color: var(--text-secondary)">${type.name}</p></div>`;
+                    document.getElementById('details-url').textContent = data.url;
+                    document.getElementById('details-status').innerHTML = `<span class="${statusInfo[data.status].color}">${statusInfo[data.status].text}</span>`;
+                    document.getElementById('details-last-check').textContent = formatDateTime(data.lastCheckTime, true);
+                    document.getElementById('details-description').textContent = data.lastStatusDescription || '-';
+                    document.getElementById('details-history').innerHTML = data.downtimeHistory.length === 0 ? '<p class="text-center" style="color: var(--text-secondary)">تاریخچه قطعی ثبت نشده است.</p>' : data.downtimeHistory.map(event => `<div class="p-3 rounded-lg text-xs" style="background-color: var(--bg-primary)"><div class="flex justify-between items-center"><span class="font-bold text-red-400">شروع: <span class="font-mono" style="color: var(--text-primary)">${formatDateTime(event.startTime, true)}</span></span><span class="font-semibold" style="color: var(--text-secondary)">${event.endTime ? `${Math.max(1, ((new Date(event.endTime) - new Date(event.startTime)) / 60000)).toFixed(0)} دقیقه` : 'در حال حاضر قطع'}</span></div>${event.endTime ? `<p class="mt-1 font-bold text-green-400">پایان: <span class="font-mono" style="color: var(--text-primary)">${formatDateTime(event.endTime, true)}</span></p>` : ''}</div>`).join('');
+                    openModal(detailsModal);
+                } catch (e) { showCustomAlert('خطا در دریافت اطلاعات سرویس.'); }
+            };
+
+            // --- User & Group Management Logic ---
+            const handleCreateUser = async (e) => {
+                e.preventDefault();
+                addUserMessage.textContent = '';
+                const payload = { email: document.getElementById('new-user-email').value, password: document.getElementById('new-user-password').value, role: document.getElementById('new-user-role').value };
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/account/register`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
+                    const msg = await res.text();
+                    if (!res.ok) throw new Error(msg);
+                    showCustomAlert("کاربر با موفقیت ایجاد شد.", false);
+                    closeModal(addUserModal);
+                    addUserForm.reset();
+                } catch (error) { addUserMessage.textContent = error.message; }
+            };
+            const renderGroupList = () => { groupListDiv.innerHTML = allGroups.length === 0 ? '<p class="text-center" style="color: var(--text-secondary)">گروهی یافت نشد.</p>' : allGroups.sort((a, b) => a.name.localeCompare(b.name, 'fa')).map(g => `<div class="flex items-center justify-between p-3 rounded-lg" style="background-color: var(--bg-primary)"><span class="font-semibold" style="color: var(--text-primary)">${g.name}</span><button data-group-id="${g.id}" class="delete-group-btn transition-colors hover:text-red-400" style="color: var(--text-secondary)"><i class="fas fa-trash"></i></button></div>`).join(''); };
+            const handleCreateGroup = async (e) => {
+                e.preventDefault();
+                const name = newGroupNameInput.value.trim();
+                if (!name) return;
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/servicegroups`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ name }) });
+                    if (!res.ok) throw new Error();
+                    const newGroup = await res.json();
+                    allGroups.push(newGroup);
+                    renderGroupList();
+                    populateGroupDropdown();
+                    newGroupNameInput.value = '';
+                } catch (e) { showCustomAlert("خطا در ایجاد گروه."); }
+            };
+            const deleteGroup = (id) => {
+                const group = allGroups.find(g => g.id === id);
+                if (!group) return;
+                showConfirmModal('حذف گروه', `آیا از حذف گروه "${group.name}" اطمینان دارید؟`, async () => {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/api/servicegroups/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+                        if (!res.ok) { const errorText = await res.text(); throw new Error(errorText); }
+                        allGroups = allGroups.filter(g => g.id !== id);
+                        renderGroupList();
+                        populateGroupDropdown();
+                        showCustomAlert("گروه با موفقیت حذف شد.", false);
+                    } catch (e) { showCustomAlert(e.message || "خطا در حذف گروه."); }
+                });
+            };
+
+            // --- Auth & App Initialization ---
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                const loginError = document.getElementById('login-error');
+                loginError.textContent = '';
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/account/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value }) });
+                    if (!res.ok) throw new Error(await res.text() || 'Login failed.');
+                    const result = await res.json();
+                    localStorage.setItem('jwt_token', result.token);
+                    localStorage.setItem('user_info', JSON.stringify(result.user));
+                    initializeApp();
+                } catch (error) { loginError.textContent = error.message; }
+            };
+            const handleLogout = async () => { if (signalRConnection) await signalRConnection.stop(); localStorage.clear(); user = null; showAuth(); };
+            const showDashboard = () => {
+                authSection.classList.add('hidden');
+                dashboardSection.classList.remove('hidden');
+                user = JSON.parse(localStorage.getItem('user_info'));
+                document.getElementById('user-info').textContent = `${user.email} (${user.role})`;
+                const isAdmin = user.role === 'Admin';
+                adminHeaderControls.style.display = isAdmin ? 'flex' : 'none';
+                adminActionButtons.style.display = isAdmin ? 'flex' : 'none';
+                fetchAllData();
+                startSignalRConnection();
+            };
+            const showAuth = () => { authSection.classList.remove('hidden'); dashboardSection.classList.add('hidden'); };
+
+            const startSignalRConnection = async () => {
+                if (signalRConnection) await signalRConnection.stop();
+                signalRConnection = new signalR.HubConnectionBuilder().withUrl("/statusHub", { accessTokenFactory: () => localStorage.getItem("jwt_token") }).withAutomaticReconnect().build();
+
+                signalRConnection.on("ReceiveServiceUpdate", (updatedService) => {
+                    updatedService.serviceGroup = allGroups.find(g => g.id === updatedService.serviceGroupId) || null;
+                    const index = allServices.findIndex(s => s.id === updatedService.id);
+
+                    if (index !== -1) {
+                        allServices[index] = updatedService;
+                    } else {
+                        allServices.push(updatedService);
+                        filterServices();
+                        return;
+                    }
+
+                    const cardToUpdate = serviceListContainer.querySelector(`[data-service-id='${updatedService.id}']`);
+                    if (cardToUpdate) {
+                        cardToUpdate.outerHTML = createServiceCardHTML(updatedService);
+                        const newCard = serviceListContainer.querySelector(`[data-service-id='${updatedService.id}']`);
+                        if (newCard) {
+                            const flashClass = { 0: 'is-updating-pending', 1: 'is-updating-online', 2: 'is-updating-offline' }[updatedService.status];
+                            if (flashClass) {
+                                newCard.classList.add(flashClass);
+                                setTimeout(() => newCard.classList.remove(flashClass), 500);
+                            }
+                        }
+                    } else {
+                        filterServices();
+                    }
+                    renderStats();
+                });
+
+                signalRConnection.on("RemoveService", (id) => { allServices = allServices.filter(s => s.id !== id); filterServices(); });
+                try { await signalRConnection.start(); } catch (err) { console.error("SignalR Connection Error: ", err); setTimeout(startSignalRConnection, 5000); }
+            };
+
+            const initializeApp = () => { localStorage.getItem('jwt_token') ? showDashboard() : showAuth(); };
+
+            // --- Event Listeners ---
+            loginForm.addEventListener('submit', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+            searchBox.addEventListener('input', filterServices);
+            manualRefreshBtn.addEventListener('click', handleManualRefresh);
+            document.querySelectorAll('.btn-cancel-modal').forEach(btn => btn.addEventListener('click', () => modals.forEach(m => closeModal(m))));
+            addServiceBtn.addEventListener('click', () => openServiceModal(false));
+            serviceForm.addEventListener('submit', handleServiceFormSubmit);
+            serviceFormElements.validateBtn.addEventListener('click', handleValidateUrl);
+            manageUsersBtn.addEventListener('click', () => openModal(addUserModal));
+            addUserForm.addEventListener('submit', handleCreateUser);
+            manageGroupsBtn.addEventListener('click', () => openModal(manageGroupsModal));
+            addGroupForm.addEventListener('submit', handleCreateGroup);
+
+            serviceFormElements.type.addEventListener('change', toggleRedisFields);
+
+            [
+                serviceFormElements.name, serviceFormElements.url, serviceFormElements.interval,
+                serviceFormElements.sortOrder, serviceFormElements.group,
+                serviceFormElements.redisUser, serviceFormElements.redisPass, serviceFormElements.redisDb,
+                serviceFormElements.retryInterval
+            ].forEach(input => {
+                const eventType = input.tagName === 'SELECT' ? 'change' : 'input';
+                input.addEventListener(eventType, checkFormValidity);
+            });
+
+            confirmOkBtn.addEventListener('click', () => { if (confirmCallback) confirmCallback(); closeModal(confirmModal); });
+            confirmCancelBtn.addEventListener('click', () => closeModal(confirmModal));
+
+            document.body.addEventListener('click', (e) => {
+                const serviceButton = e.target.closest('[data-service-id] button[data-action]');
+                if (serviceButton) {
+                    const card = serviceButton.closest('[data-service-id]');
+                    const id = card.dataset.serviceId;
+                    const action = serviceButton.dataset.action;
+                    if (action === 'edit') editService(id);
+                    else if (action === 'delete') deleteService(id);
+                    else if (action === 'details') showDetails(id);
+                    return;
+                }
+
+                const groupDeleteButton = e.target.closest('.delete-group-btn');
+                if (groupDeleteButton) {
+                    const id = parseInt(groupDeleteButton.dataset.groupId, 10);
+                    if (id) deleteGroup(id);
+                    return;
+                }
+            });
+
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
+
